@@ -1,0 +1,67 @@
+/* Colours, dark mode, fonts and page defaults */
+:root {
+    --bg: #f2f4f8;
+    --card: #fff;
+    --ink: #17233b;
+    --mut: #5d6880;
+    --line: #dfe3ec;
+    --blue: #2f4ec4;
+    --onb: #fff;
+    --hl: #ffd447;
+    --side: #17233b;
+    --bad: #c0392b;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light
+}
+
+@media(prefers-color-scheme:dark) {
+    :root:not([data-theme="light"]) {
+        --bg: #0f1626;
+        --card: #19233a;
+        --ink: #e8ecf6;
+        --mut: #9aa6c0;
+        --line: #2a3652;
+        --blue: #7f9bff;
+        --onb: #0f1626;
+        --side: #0a1020;
+        --bad: #ff8a7a;
+        color-scheme: dark
+    }
+}
+
+:root[data-theme="dark"] {
+    --bg: #0f1626;
+    --card: #19233a;
+    --ink: #e8ecf6;
+    --mut: #9aa6c0;
+    --line: #2a3652;
+    --blue: #7f9bff;
+    --onb: #0f1626;
+    --side: #0a1020;
+    --bad: #ff8a7a;
+    color-scheme: dark
+}
+
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    font-family: 'Lexend', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5
+}
+
+h1 {
+    font-size: 1.6rem;
+    margin: 0
+}
+
+h2 {
+    font-size: 1.1rem;
+    margin: 0 0 .5rem
+}
