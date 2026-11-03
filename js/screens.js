@@ -23,13 +23,13 @@ const V = {
     return (
       `<section class="desk-welcome"><div><p class="desk-eyebrow">${todayLabel} · ${dateLabel.toUpperCase()}</p><h1>Your study space</h1><p>All the little things you’re working toward.</p></div><button class="desk-primary" data-a="nav" data-v="plans">Open my study plan <span>↗</span></button></section>
       <section class="desk-stats"><article><span>Tasks to do</span><b>${String(s.open).padStart(2, "0")}</b><small>${s.over ? `${s.over} overdue · take one step at a time` : "One small step at a time"}</small></article><article><span>Notes saved</span><b>${String(D.notes.length).padStart(2, "0")}</b><small>Your ideas, all together</small></article><article><span>Cards mastered</span><b>${String(s.known).padStart(2, "0")}</b><small>${D.cards.length ? `${s.known} of ${D.cards.length} cards` : "Keep the streak going"}</small></article></section>
-      <section class="desk-lower"><article class="desk-list"><div class="desk-card-heading"><div><span class="desk-eyebrow">UP NEXT</span><h2>Your study plan</h2></div><button class="desk-view-all" data-a="nav" data-v="tasks">View tasks ↗</button></div>${up.map((t) => `<div class="desk-row"><i class="desk-check ${t.status == "completed" ? "checked" : ""}">${t.status == "completed" ? "✓" : ""}</i><span><b>${esc(t.title)}</b><small>${esc(sub(t.sid).name)} · ${fmt(t.due)}</small></span><em class="${t.due < today() ? "red" : ""}">${t.due < today() ? "Overdue" : t.type}</em></div>`).join("") || '<div class="desk-empty">Nothing coming up. Add a task to get started.</div>'}<button class="desk-add" data-a="edit" data-k="tasks">+ Add a task</button></article><article class="desk-progress"><span class="desk-eyebrow">YOUR MOMENTUM</span><h2>Showing up adds up.</h2><div class="progress-ring" style="--progress:${o}%"><div><b>${o}%</b><small>overall progress</small></div></div><p>${all ? "Nice work. You’re building a good rhythm." : "Add tasks and flashcards to start tracking your progress."}</p><button class="desk-view-all" data-a="nav" data-v="progress">See your progress ↗</button></article></section>`
+      <section class="desk-lower"><article class="desk-list"><div class="desk-card-heading"><div><span class="desk-eyebrow">UP NEXT</span><h2>Your study plan</h2></div><button class="desk-view-all" data-a="nav" data-v="tasks">View tasks ↗</button></div>${up.map((t) => `<div class="desk-row"><i class="desk-check ${t.status == "completed" ? "checked" : ""}">${t.status == "completed" ? "✓" : ""}</i><span><b>${esc(t.title)}</b><small>${esc(sub(t.sid).name)} · ${fmt(t.due)}</small></span><em class="${t.due < today() ? "red" : ""}">${t.due < today() ? "Overdue" : esc(({ assignment: "Assignment", project: "Project", quiz: "Quiz", exam: "Exam" })[t.type] || "Task")}</em></div>`).join("") || '<div class="desk-empty">Nothing coming up. Add a task to get started.</div>'}<button class="desk-add" data-a="edit" data-k="tasks">+ Add a task</button></article><article class="desk-progress"><span class="desk-eyebrow">YOUR MOMENTUM</span><h2>Showing up adds up.</h2><div class="progress-ring" style="--progress:${o}%"><div><b>${o}%</b><small>overall progress</small></div></div><p>${all ? "Nice work. You’re building a good rhythm." : "Add tasks and flashcards to start tracking your progress."}</p><button class="desk-view-all" data-a="nav" data-v="progress">See your progress ↗</button></article></section>`
     );
   },
   subjects() {
     return (
       hd("Subjects", add("subjects", "Add subject")) +
-      `<div class="grid">${D.subjects.map((s) => `<div class="card tag" style="--c:${s.color}"><h2>${esc(s.name)}</h2><p class="mut">${D.notes.filter((x) => x.sid == s.id).length} notes · ${D.tasks.filter((x) => x.sid == s.id).length} tasks · ${D.cards.filter((x) => x.sid == s.id).length} cards</p>${rb("subjects", s.id)}</div>`).join("")}</div>` +
+      `<div class="grid">${D.subjects.map((s) => `<div class="card tag" style="--c:${safeColor(s.color)}"><h2>${esc(s.name)}</h2><p class="mut">${D.notes.filter((x) => x.sid == s.id).length} notes · ${D.tasks.filter((x) => x.sid == s.id).length} tasks · ${D.cards.filter((x) => x.sid == s.id).length} cards</p>${rb("subjects", s.id)}</div>`).join("")}</div>` +
       (D.subjects.length
         ? ""
         : '<div class="empty">No subjects yet. Add one like “Biology” or “Algebra” to get started.</div>')
@@ -70,8 +70,8 @@ const V = {
    l
      .map((t) => {
        const late = t.status != "completed" && t.due < today();
-       return `<tr class="${late ? "late" : ""}"><td><strong>${esc(t.title)}</strong><br><span class="mut">${esc(sub(t.sid).name)} · ${t.type}</span></td><td>${fmt(t.due)}${late ? '<br><span class="red mut">Overdue</span>' : ""}</td><td><span class="badge">${t.pri}</span></td>
- <td><select data-c="tstatus" data-id="${t.id}" aria-label="Status">${[
+       return `<tr class="${late ? "late" : ""}"><td><strong>${esc(t.title)}</strong><br><span class="mut">${esc(sub(t.sid).name)} · ${esc(({ assignment: "Assignment", project: "Project", quiz: "Quiz", exam: "Exam" })[t.type] || "Task")}</span></td><td>${fmt(t.due)}${late ? '<br><span class="red mut">Overdue</span>' : ""}</td><td><span class="badge">${esc(({ low: "Low", medium: "Medium", high: "High" })[t.pri] || "Medium")}</span></td>
+ <td><select data-c="tstatus" data-id="${safeId(t.id)}" aria-label="Status">${[
    ["pending", "Pending"],
    ["in_progress", "In progress"],
    ["completed", "Completed"],
@@ -97,7 +97,7 @@ const V = {
       ) +
       needSub() +
       `<p>${subSel("csub", CF, 1)}</p>
- <div class="card tw" style="padding:0"><table><thead><tr><th>Question</th><th>Answer</th><th>Status</th><th></th></tr></thead>${l.map((c) => `<tr><td>${esc(c.front)}<br><span class="mut">${esc(sub(c.sid).name)}${c.topic ? " · " + esc(c.topic) : ""}</span></td><td>${esc(c.back)}</td><td><span class="badge">${L[c.status]}</span><br><span class="mut">Reviewed ${c.times}×</span></td><td class="row">${rb("cards", c.id)}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">No flashcards yet. Add a question and answer to begin.</td></tr>'}</table></div>`
+ <div class="card tw" style="padding:0"><table><thead><tr><th>Question</th><th>Answer</th><th>Status</th><th></th></tr></thead>${l.map((c) => `<tr><td>${esc(c.front)}<br><span class="mut">${esc(sub(c.sid).name)}${c.topic ? " · " + esc(c.topic) : ""}</span></td><td>${esc(c.back)}</td><td><span class="badge">${esc(L[c.status] || "New")}</span><br><span class="mut">Reviewed ${c.times}×</span></td><td class="row">${rb("cards", c.id)}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">No flashcards yet. Add a question and answer to begin.</td></tr>'}</table></div>`
     );
   },
   review() {
@@ -131,7 +131,7 @@ const V = {
       hd("Study plans", add("plans", "Create plan")) +
       needSub() +
       (D.plans.length
-        ? `<div class="grid">${D.plans.map((p) => `<article class="card tag" style="--c:${sub(p.sid).color}"><div class="row" style="justify-content:space-between"><h2>${esc(p.title)}</h2><span class="badge">${fmt(p.start)} – ${fmt(p.end)}</span></div><p class="mut">${esc(sub(p.sid).name)}</p><p style="white-space:pre-wrap">${esc(p.goal)}</p>${bar(p.end < today() ? 100 : p.start > today() ? 0 : 50, sub(p.sid).color)}<span class="mut">${p.end < today() ? "Target date passed" : p.start > today() ? "Starts soon" : "In progress"}</span><div class="row">${rb("plans", p.id)}</div></article>`).join("")}</div>`
+        ? `<div class="grid">${D.plans.map((p) => `<article class="card tag" style="--c:${safeColor(sub(p.sid).color)}"><div class="row" style="justify-content:space-between"><h2>${esc(p.title)}</h2><span class="badge">${fmt(p.start)} – ${fmt(p.end)}</span></div><p class="mut">${esc(sub(p.sid).name)}</p><p style="white-space:pre-wrap">${esc(p.goal)}</p>${bar(p.end < today() ? 100 : p.start > today() ? 0 : 50, sub(p.sid).color)}<span class="mut">${p.end < today() ? "Target date passed" : p.start > today() ? "Starts soon" : "In progress"}</span><div class="row">${rb("plans", p.id)}</div></article>`).join("")}</div>`
         : '<div class="card empty">Build a simple plan around a subject, learning goal, and target date. Your plans will live here.</div>')
     );
   },
@@ -195,7 +195,7 @@ const V = {
       hd("Study progress") +
       `<div class="grid"><div class="card stat"><b>${tot}</b><span>Card reviews so far</span></div><div class="card stat"><b>${pct(ok, tot)}%</b><span>Answered correctly</span></div></div>
  <div class="card"><h2>Last 14 days of flashcard review</h2>${tot ? `<div class="chart">${per.map((p) => `<div title="${fmt(p.d)}: ${p.k} of ${p.t} known"><div class="bars"><i style="height:${(p.t / mx) * 100}%;background:var(--line)"></i><i style="height:${(p.k / mx) * 100}%;background:var(--blue)"></i></div>${p.d.slice(8)}</div>`).join("")}</div><p class="mut">Grey bars are cards reviewed, blue bars are cards you knew. Day of month along the bottom.</p>` : '<div class="empty">Review some flashcards and your trend will show up here.</div>'}</div>
- <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"><div class="card"><h2>By subject</h2>${rows.map((r) => `<div class="tag" style="--c:${r.s.color}"><div class="row" style="justify-content:space-between"><strong>${esc(r.s.name)}</strong><span>${r.score == null ? "No data yet" : r.score + "%"}</span></div><span class="mut">Tasks ${r.td}/${r.t.length}</span>${bar(r.tp, r.s.color)}<span class="mut">Flashcards mastered ${r.kn}/${r.c.length}</span>${bar(r.cp, r.s.color)}</div>`).join("") || '<div class="empty">Add subjects to see progress.</div>'}</div>
+ <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"><div class="card"><h2>By subject</h2>${rows.map((r) => `<div class="tag" style="--c:${safeColor(r.s.color)}"><div class="row" style="justify-content:space-between"><strong>${esc(r.s.name)}</strong><span>${r.score == null ? "No data yet" : r.score + "%"}</span></div><span class="mut">Tasks ${r.td}/${r.t.length}</span>${bar(r.tp, r.s.color)}<span class="mut">Flashcards mastered ${r.kn}/${r.c.length}</span>${bar(r.cp, r.s.color)}</div>`).join("") || '<div class="empty">Add subjects to see progress.</div>'}</div>
  <div class="card"><h2>Needs more review</h2>${rows
    .filter((r) => r.weak)
    .map(
@@ -221,7 +221,7 @@ function noteList() {
     l
       .map(
         (n) =>
-          `<div class="card tag" style="--c:${sub(n.sid).color}"><div class="row" style="justify-content:space-between"><h2>${esc(n.title)}</h2><span class="mut">${fmt(n.date)}</span></div><p class="mut">${esc(sub(n.sid).name)}</p><p style="white-space:pre-wrap">${esc(n.text)}</p>${rb("notes", n.id)}</div>`,
+          `<div class="card tag" style="--c:${safeColor(sub(n.sid).color)}"><div class="row" style="justify-content:space-between"><h2>${esc(n.title)}</h2><span class="mut">${fmt(n.date)}</span></div><p class="mut">${esc(sub(n.sid).name)}</p><p style="white-space:pre-wrap">${esc(n.text)}</p>${rb("notes", n.id)}</div>`,
       )
       .join("") ||
     `<div class="empty">${Q.q || Q.s ? "No notes match your search." : "No notes yet. Add one to start building your study library."}</div>`

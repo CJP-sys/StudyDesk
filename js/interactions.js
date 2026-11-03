@@ -23,10 +23,14 @@ const A = {
   close: () => {
     $("#modal").innerHTML = "";
   },
-  logout: () => {
-    clearSession();
-    U = D = null;
-    render();
+  logout: async () => {
+    try {
+      await clearSession();
+      U = D = null;
+      window.location.replace("login.html");
+    } catch (error) {
+      toast(`Could not log out: ${error.message}`);
+    }
   },
   yes: () => {
     $("#modal").innerHTML = "";

@@ -8,21 +8,17 @@ const esc = (s) =>
         c
       ],
   );
+const safeColor = (value) =>
+  /^#[\da-f]{6}$/i.test(String(value ?? "")) ? value : "#999999";
+const safeId = (value) =>
+  Number.isSafeInteger(Number(value)) && Number(value) > 0 ? Number(value) : 0;
 const mem = {};
 const store = {
   get(k) {
-    try {
-      const v = localStorage.getItem(k);
-      return v ? JSON.parse(v) : (mem[k] ?? null);
-    } catch (e) {
-      return mem[k] ?? null;
-    }
+    return mem[k] ?? null;
   },
   set(k, v) {
     mem[k] = v;
-    try {
-      localStorage.setItem(k, JSON.stringify(v));
-    } catch (e) {}
   },
 };
 const today = () => new Date().toLocaleDateString("en-CA");
@@ -78,15 +74,15 @@ const toast = (m) => {
   toast.t = setTimeout(() => (t.hidden = true), 2500);
 };
 const bar = (p, c) =>
-  `<div class="bar"><i style="width:${p}%;background:${c || "var(--blue)"}"></i></div>`;
+  `<div class="bar"><i style="width:${Math.max(0, Math.min(100, Number(p) || 0))}%;background:${c ? safeColor(c) : "var(--blue)"}"></i></div>`;
 const hd = (t, b = "") => `<div class="hd"><h1>${t}</h1><div>${b}</div></div>`;
 const add = (k, l) =>
   `<button class="btn" data-a="edit" data-k="${k}">${l}</button>`;
 const rb = (k, id) =>
-  `<button class="btn sm ghost" data-a="edit" data-k="${k}" data-id="${id}">Edit</button> <button class="btn sm danger" data-a="del" data-k="${k}" data-id="${id}">Delete</button>`;
+  `<button class="btn sm ghost" data-a="edit" data-k="${k}" data-id="${safeId(id)}">Edit</button> <button class="btn sm danger" data-a="del" data-k="${k}" data-id="${safeId(id)}">Delete</button>`;
 const needSub = () =>
   D.subjects.length
     ? ""
     : `<div class="card">Add a subject first, then attach notes, tasks and flashcards to it. <button class="btn sm" data-a="nav" data-v="subjects">Go to Subjects</button></div>`;
 const subSel = (id, val, all) =>
-  `<select data-c="${id}">${all ? '<option value="">All subjects</option>' : ""}${D.subjects.map((s) => `<option value="${s.id}" ${s.id == val ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select>`;
+  `<select data-c="${id}">${all ? '<option value="">All subjects</option>' : ""}${D.subjects.map((s) => `<option value="${safeId(s.id)}" ${s.id == val ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select>`;

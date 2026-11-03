@@ -2,13 +2,29 @@
 async function submitAuth(e) {
   e.preventDefault();
   const f = Object.fromEntries(new FormData(e.target));
+  const submit = e.target.querySelector(".auth-submit");
+  submit.disabled = true;
   try {
-    const path = authMode === "register" ? "/auth/register" : "/auth/login";
-    const session = await apiRequest(path, { method: "POST", body: JSON.stringify(f) });
-    saveSession(session);
+    if (authMode === "register") {
+      const { data, error } = await supabase.auth.signUp({
+        email: f.email.trim(), password: f.password,
+        options: { data: { name: f.name.trim() } },
+      });
+      if (error) throw error;
+      if (!data.session) {
+        authMode = "login";
+        renderLoginPage();
+        $("#err").textContent = "Check your email to confirm your account, then log in.";
+        return;
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email: f.email.trim(), password: f.password });
+      if (error) throw error;
+    }
     window.location.replace("app.html");
   } catch (error) {
-    $("#err").textContent = error.message;
+    $("#err").textContent = error.message || "Could not complete authentication.";
+    submit.disabled = false;
   }
 }
 
@@ -48,8 +64,17 @@ function renderLoginPage() {
     input.type = shown ? "text" : "password";
     e.currentTarget.setAttribute("aria-label", shown ? "Hide password" : "Show password");
   });
-  app.querySelector("#reset-password")?.addEventListener("click", () => {
-    $("#err").textContent = "Password reset is not available in this local demo. Please create a new account or contact your administrator.";
+  app.querySelector("#reset-password")?.addEventListener("click", async () => {
+    const email = form.elements.email.value.trim();
+    if (!email) {
+      $("#err").textContent = "Enter your email address first.";
+      form.elements.email.focus();
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}/login.html?mode=recovery`,
+    });
+    $("#err").textContent = error ? error.message : "If an account exists for that email, a reset link is on its way.";
   });
   $("#auth-toggle").onclick = () => {
     authMode = isRegister ? "login" : "register";
@@ -57,12 +82,38 @@ function renderLoginPage() {
   };
 }
 
-function startLoginPage() {
-  if (new URLSearchParams(location.search).get("mode") == "register") authMode = "register";
-  let user;
-  try { user = JSON.parse(sessionStorage.getItem("sd_user") || "null"); } catch { user = null; }
-  if (!sessionStorage.getItem("sd_token")) user = null;
-  if (user) {
+function renderRecoveryPage() {
+  const app = $("#app");
+  app.innerHTML = `<section class="auth-scene is-login"><section class="auth-panel" aria-labelledby="auth-title"><h1 class="auth-brand">StudyDesk</h1><div class="auth-card"><h2 id="auth-title">Choose a new password</h2><form class="auth-form" id="recovery-form"><label for="new-password">New password</label><div class="field-wrap"><input id="new-password" name="password" type="password" autocomplete="new-password" minlength="8" required></div><p id="err" class="auth-error" role="alert" aria-live="polite"></p><button class="auth-submit" type="submit">Update password</button></form></div></section></section>`;
+  $("#recovery-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
+    const button = event.currentTarget.querySelector("button[type=submit]");
+    button.disabled = true;
+    const { error } = await supabase.auth.updateUser({ password: event.currentTarget.elements.password.value });
+    if (error) {
+      $("#err").textContent = error.message;
+      button.disabled = false;
+      return;
+    }
+    window.location.replace("app.html");
+  });
+}
+
+async function startLoginPage() {
+  const mode = new URLSearchParams(location.search).get("mode");
+  if (mode === "recovery") {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) renderRecoveryPage();
+    else {
+      renderLoginPage();
+      $("#err").textContent = "That password reset link is invalid or expired. Request a new one.";
+    }
+    return;
+  }
+  if (mode === "register") authMode = "register";
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
     window.location.replace("app.html");
     return;
   }
