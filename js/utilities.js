@@ -60,7 +60,13 @@ const NAV = [
   ["progress", "Progress"],
   ["arcade", "Arcade"],
 ];
-const save = () => store.set("sd_data_" + U.id, D);
+const save = () => {
+  clearTimeout(save.timer);
+  save.timer = setTimeout(() => {
+    apiRequest("/data", { method: "PUT", body: JSON.stringify(D) })
+      .catch((error) => toast(`Save failed: ${error.message}`));
+  }, 300);
+};
 const sub = (id) =>
   D.subjects.find((s) => s.id == id) || { name: "Unknown", color: "#999" };
 const subjOpts = () => D.subjects.map((s) => ({ v: s.id, l: s.name }));

@@ -24,7 +24,7 @@ const A = {
     $("#modal").innerHTML = "";
   },
   logout: () => {
-    store.set("sd_session", null);
+    clearSession();
     U = D = null;
     render();
   },
