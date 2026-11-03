@@ -4,7 +4,7 @@ if (!window.STUDYDESK_SUPABASE_URL || window.STUDYDESK_SUPABASE_URL.includes("YO
     !window.STUDYDESK_SUPABASE_ANON_KEY || window.STUDYDESK_SUPABASE_ANON_KEY.startsWith("YOUR_")) {
   throw new Error("Add your Supabase project URL and publishable/anon key in js/supabase-config.js.");
 }
-const supabase = window.supabase.createClient(
+const supabaseClient = window.supabase.createClient(
   window.STUDYDESK_SUPABASE_URL,
   window.STUDYDESK_SUPABASE_ANON_KEY,
   {
@@ -22,7 +22,7 @@ const emptyStudyData = () => ({
 });
 
 const currentUserId = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { user }, error } = await supabaseClient.auth.getUser();
   if (error || !user) throw new Error("Your session expired. Please log in again.");
   return user.id;
 };
@@ -32,7 +32,7 @@ const apiRequest = async (path, options = {}) => {
   if (path !== "/data") throw new Error("Unsupported StudyDesk data request.");
   const userId = await currentUserId();
   if (!options.method || options.method === "GET") {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from("study_data")
       .select("data")
       .eq("user_id", userId)
@@ -41,7 +41,7 @@ const apiRequest = async (path, options = {}) => {
     if (data) return data.data;
 
     const initialData = emptyStudyData();
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseClient
       .from("study_data")
       .insert({ user_id: userId, data: initialData });
     if (insertError && insertError.code !== "23505") throw new Error(insertError.message);
@@ -56,7 +56,7 @@ const apiRequest = async (path, options = {}) => {
         !["subjects", "notes", "tasks", "cards", "log", "plans"].every((key) => Array.isArray(data[key]))) {
       throw new Error("Study data is invalid and could not be saved.");
     }
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from("study_data")
       .upsert({ user_id: userId, data, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
     if (error) throw new Error(error.message);
@@ -67,6 +67,6 @@ const apiRequest = async (path, options = {}) => {
 };
 
 const clearSession = async () => {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabaseClient.auth.signOut();
   if (error) throw new Error(error.message);
 };

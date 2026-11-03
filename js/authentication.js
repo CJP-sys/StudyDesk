@@ -6,7 +6,7 @@ async function submitAuth(e) {
   submit.disabled = true;
   try {
     if (authMode === "register") {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabaseClient.auth.signUp({
         email: f.email.trim(), password: f.password,
         options: { data: { name: f.name.trim() } },
       });
@@ -18,7 +18,7 @@ async function submitAuth(e) {
         return;
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email: f.email.trim(), password: f.password });
+      const { error } = await supabaseClient.auth.signInWithPassword({ email: f.email.trim(), password: f.password });
       if (error) throw error;
     }
     window.location.replace("app.html");
@@ -71,7 +71,7 @@ function renderLoginPage() {
       form.elements.email.focus();
       return;
     }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
       redirectTo: `${location.origin}/login.html?mode=recovery`,
     });
     $("#err").textContent = error ? error.message : "If an account exists for that email, a reset link is on its way.";
@@ -90,7 +90,7 @@ function renderRecoveryPage() {
     if (!event.currentTarget.reportValidity()) return;
     const button = event.currentTarget.querySelector("button[type=submit]");
     button.disabled = true;
-    const { error } = await supabase.auth.updateUser({ password: event.currentTarget.elements.password.value });
+    const { error } = await supabaseClient.auth.updateUser({ password: event.currentTarget.elements.password.value });
     if (error) {
       $("#err").textContent = error.message;
       button.disabled = false;
@@ -103,7 +103,7 @@ function renderRecoveryPage() {
 async function startLoginPage() {
   const mode = new URLSearchParams(location.search).get("mode");
   if (mode === "recovery") {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
     if (user) renderRecoveryPage();
     else {
       renderLoginPage();
@@ -112,7 +112,7 @@ async function startLoginPage() {
     return;
   }
   if (mode === "register") authMode = "register";
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     window.location.replace("app.html");
     return;
